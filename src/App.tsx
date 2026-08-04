@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getBooks } from "./services/OpenLibrary";
 import type { Book } from "./types/book";
 import BookCard from "./components/BookCard";
@@ -27,6 +27,7 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get("search") || "";
   });
+  
 
   const [yearFilter, setYearFilter] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -40,12 +41,12 @@ function App() {
     return params.get("sort") || "default";
   });
 
-  async function loadBooks(query: string) {
+  // loadBooks para busquedas hechas por el usuario.
+ const loadBooks = useCallback(async (query: string) => {
     try {
       setLoading(true);
       setError("");
 
-      setSearchQuery(query);
 
       // Consulta a la API de Open Library para obtener libros
       const booksFromAPI = await getBooks(query); // usa la búsqueda recibida
@@ -55,14 +56,19 @@ function App() {
       setPage(1);
       setHasMore(booksFromAPI.length == 20);
     } catch (error) {
-      setError("Failed to load books. Please try again later.");
-      console.error(error);
-    } finally {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Failed to load books. Please try again later.");
+        }
+        console.error(error);
+      } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadMoreBooks() {
+  // loadMoreBooks para cargar más libros cuando el usuario hace scroll.
+   const loadMoreBooks = useCallback(async () => {
     if (loadingMore || !hasMore) {
       return;
     }
@@ -84,7 +90,7 @@ function App() {
 
       setPage(nextPage);
 
-      if (moreBooks.length < 1) {
+      if (moreBooks.length === 0) {
         setHasMore(false);
       }
     } catch (error) {
@@ -92,11 +98,32 @@ function App() {
     } finally {
       setLoadingMore(false);
     }
-  }
+  }, [loadingMore, hasMore, page, searchQuery]);
 
   // para ejecutar solo una vez al cargar la página.
   useEffect(() => {
-    loadBooks(searchQuery);
+    // espera API y carga libros iniciales.
+    async function loadInitialBooks() {
+      try {
+        const booksFromAPI = await getBooks("popular");
+        setBooks(booksFromAPI);
+        setPage(1);
+        setHasMore(booksFromAPI.length > 0);
+      }
+
+      catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError("Failed to load books. Please try again later.");
+        }
+        console.error(error);
+      } finally {
+          setLoading(false);
+        }
+    }
+
+    void loadInitialBooks();
   }, []);
 
   useEffect(() => {
@@ -124,8 +151,9 @@ function App() {
         observer.unobserve(currentElement);
       }
     };
-  }, [page, loadingMore, hasMore, searchQuery]);
+  }, [loadMoreBooks]);
 
+  // Actualiza URL
   useEffect(() => {
     const params = new URLSearchParams();
 
@@ -197,10 +225,11 @@ function App() {
   }
 
   const handleHomeClick = () => {
+    setSearchQuery("");
     setYearFilter("all");
     setSortOrder("default");
 
-    loadBooks("");
+    loadBooks("popular");
   };
 
   return (
