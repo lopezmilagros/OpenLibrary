@@ -1,0 +1,55 @@
+SRC
+    en src es donde voy a programar la aplicacion
+    - app.tsx
+        es el componente principal, es el codigo de mi aplicacion.
+        es donde voy a guardar la lista de libros, el texto de busqueda, controlar filtros, loading, error.
+
+    - main.tsx
+        casi no lo voy a tocar, es el punto de entrada a react.
+
+    - index.css
+        pongo los estilos qeu afectan a toda la app
+        seguro quede corto pq uso tailwind
+    
+    - app.css
+        archivo de estilos, seguro no lo use pq uso tailwind.
+        seguro lo borre.
+
+    - assets
+        carpeta para guardar imagenes.
+        las portadas de los libros las saco de open library, no las tengo que guardar aca.
+        arhivos que importo desde react.
+
+- public
+    archivos publicos, se sirven directamente
+
+- node_modules
+    librerias que instale. 
+    no modificar
+    no subir a git, se ignora automaticamente.
+
+- package.json
+    info y dependencias del proyecto.
+
+- index.html
+    no se escribe el contenido de la pag aca, se crea en src con react.
+
+
+Decisiones
+    Se utilizó TypeScript para tipar las respuestas de la API.
+    Se separaron los componentes para mantener el código organizado.
+    Se implementaron estados de carga, error y resultados vacíos.
+
+Mejoras futuras
+    Agregar paginación.
+    Guardar libros favoritos.
+    Agregar más filtros.
+
+
+src/
+├── components/
+├── services/
+├── types/
+├── App.tsx
+├── index.css
+└── main.tsx
