@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getBooks } from "./services/OpenLibrary";
+import { getBooks, getDefaultBooks } from "./services/OpenLibrary";
 import type { Book } from "./types/book";
 import BookCard from "./components/BookCard";
 import SearchBar from "./components/SearchBar";
@@ -18,7 +18,9 @@ function App() {
   const [loadingMore, setLoadingMore] = useState(false); //indica si está cargando más libros
   const [hasMore, setHasMore] = useState(true); //indica si hay más libros para cargar
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null); //referencia al div de carga más
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const [mode, setMode] = useState<"default" | "search">("default"); //modo de búsqueda o default
 
   const [selectedBook, setSelectedBook] = useState<Book | null>(null); //libro seleccionado para detalle
   const [showContact, setShowContact] = useState(false);
@@ -46,6 +48,7 @@ function App() {
     try {
       setLoading(true);
       setError("");
+      setMode("search");
 
 
       // Consulta a la API de Open Library para obtener libros
@@ -78,10 +81,11 @@ function App() {
 
       const nextPage = page + 1;
 
-      const moreBooks = await getBooks(
-        searchQuery,
-        nextPage
-      );
+      const moreBooks = 
+        mode === "search"
+          ? await getBooks(searchQuery, nextPage)
+          : await getDefaultBooks(nextPage);
+
 
       setBooks((currentBooks) => [
         ...currentBooks,
@@ -98,66 +102,69 @@ function App() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, page, searchQuery]);
+  }, [loadingMore, hasMore, page, searchQuery, mode]);
 
-  // para ejecutar solo una vez al cargar la página.
-  useEffect(() => {
-    // espera API y carga libros iniciales.
-    async function loadInitialBooks() {
-      try {
-        const booksFromAPI = await getBooks("popular");
-        setBooks(booksFromAPI);
-        setPage(1);
-        setHasMore(booksFromAPI.length > 0);
-      }
 
-      catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError("Failed to load books. Please try again later.");
-        }
+  // loadDefaultBooks para cargar libros por defecto cuando no hay búsqueda.
+  const loadDefaultBooks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setMode("default");
+
+      const booksFromAPI = await getDefaultBooks(1);
+      setBooks(booksFromAPI);
+      setPage(1);
+      setHasMore(booksFromAPI.length > 0);
+    }catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load books. Please try again later."
+        );
         console.error(error);
       } finally {
-          setLoading(false);
-        }
-    }
-
-    void loadInitialBooks();
+        setLoading(false);
+      }
   }, []);
 
+  // useEffect para cargar, dependiendo si hay una búsqueda en la URL o no.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-
-        if (entry.isIntersecting) {
-          loadMoreBooks();
-        }
-      },
-      {
-        rootMargin: "200px",
-      }
-    );
-
-    const currentElement = loadMoreRef.current;
-
-    if (currentElement) {
-      observer.observe(currentElement);
+    if (searchQuery) {
+      loadBooks(searchQuery);
+    } else {
+      loadDefaultBooks();
     }
+  }, []); 
 
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
+  // Intersection Observer para cargar más libros cuando el usuario hace scroll.
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      // limpia el observer anterior si existía
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
-    };
-  }, [loadMoreBooks]);
+
+      if (node) {
+        observerRef.current = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting) {
+              loadMoreBooks();
+            }
+          },
+          { rootMargin: "200px" }
+        );
+        observerRef.current.observe(node);
+      }
+    },
+    [loadMoreBooks]
+  );
 
   // Actualiza URL
   useEffect(() => {
     const params = new URLSearchParams();
 
-    if (searchQuery !== "Best Sellers") {
+    if (searchQuery !== "") {
       params.set("search", searchQuery);
     }
 
@@ -225,11 +232,11 @@ function App() {
   }
 
   const handleHomeClick = () => {
-    setSearchQuery("");
-    setYearFilter("all");
-    setSortOrder("default");
+  setSearchQuery("");
+  setYearFilter("all");
+  setSortOrder("default");
 
-    loadBooks("popular");
+  loadDefaultBooks();
   };
 
   return (
@@ -272,7 +279,6 @@ function App() {
 
       {!loading && !error && filteredBooks.length > 0 && (
         <>
-          <div ref={loadMoreRef} />
           <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 px-4 py-2 mt-10">
             {filteredBooks.map((book) => (
               <BookCard key={book.key} book={book} onClick={() => setSelectedBook(book)} />

@@ -11,6 +11,11 @@ export default defineConfig({
         target: "https://openlibrary.org",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyreq) => {
+            proxyreq.setHeader("Challange", "BookExplorer/1.0 (lopezmilagros003@gmail.com)");
+          });
+        },
       },
     },
   },
