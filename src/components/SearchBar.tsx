@@ -1,7 +1,7 @@
 interface SearchBarProps {
-  onSearch: (query: string) => void;
-  query: string;
-  onQueryChange: (query: string) => void;
+  readonly onSearch: (query: string) => void;
+  readonly query: string;
+  readonly onQueryChange: (query: string) => void;
 }
 
 function SearchBar({ onSearch, query, onQueryChange }: SearchBarProps) {
