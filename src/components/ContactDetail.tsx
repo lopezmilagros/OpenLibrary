@@ -12,7 +12,7 @@ function ContactDetail({ onClose }: ContactDetailProps) {
       className="absolute inset-0 cursor-default bg-black/50"
     />
 
-    <section
+    <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="contact-title"
@@ -69,7 +69,7 @@ function ContactDetail({ onClose }: ContactDetailProps) {
           </a>
         </p>
       </div>
-    </section>
+    </div>
   </div>
 );
 }
