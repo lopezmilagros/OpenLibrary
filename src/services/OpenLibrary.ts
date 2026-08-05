@@ -39,7 +39,7 @@ export async function getDefaultBooks(page:number=1, subject = "classics"): Prom
 
   const data = await response.json();
 
-  const books: Book[] = data.docs.map((doc: any) => ({
+  const books: Book[] = data.docs.map((doc: Book) => ({
     key: doc.key,
     title: doc.title,
     author_name: doc.author_name ?? [],

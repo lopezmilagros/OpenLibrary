@@ -57,7 +57,7 @@ function App() {
       // guarda los libros en el estado books
       setBooks(booksFromAPI);
       setPage(1);
-      setHasMore(booksFromAPI.length == 20);
+      setHasMore(booksFromAPI.length > 0);
     } catch (error) {
         if (error instanceof Error) {
           setError(error.message);
@@ -131,11 +131,13 @@ function App() {
   // useEffect para cargar, dependiendo si hay una búsqueda en la URL o no.
   useEffect(() => {
     if (searchQuery) {
+      // Desactivo eslint porque los setState estan dentro de funciones async (no hay riesgo de renders en cascada).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadBooks(searchQuery);
     } else {
       loadDefaultBooks();
     }
-  }, []); 
+  }, [searchQuery, loadBooks, loadDefaultBooks]); 
 
   // Intersection Observer para cargar más libros cuando el usuario hace scroll.
   const loadMoreRef = useCallback(
@@ -220,10 +222,10 @@ function App() {
   }
 
   if (sortOrder === "asc") {
-  filteredBooks.sort((a, b) =>
-    a.title.localeCompare(b.title)
-  );
-}
+    filteredBooks.sort((a, b) =>
+      a.title.localeCompare(b.title)
+    );
+  }
 
   if (sortOrder === "desc") {
     filteredBooks.sort((a, b) =>
@@ -232,11 +234,10 @@ function App() {
   }
 
   const handleHomeClick = () => {
-  setSearchQuery("");
-  setYearFilter("all");
-  setSortOrder("default");
+    setSearchQuery("");
+    setYearFilter("all");
+    setSortOrder("default");
 
-  loadDefaultBooks();
   };
 
   return (
@@ -308,7 +309,7 @@ function App() {
         <ContactDetail
           onClose={() => setShowContact(false)}
         />
-)}
+      )}
 
     </main>
   );
