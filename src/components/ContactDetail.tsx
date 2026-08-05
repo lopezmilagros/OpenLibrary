@@ -12,8 +12,8 @@ function ContactDetail({ onClose }: ContactDetailProps) {
       className="absolute inset-0 cursor-default bg-black/50"
     />
 
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="contact-title"
       className="relative z-10 w-full max-w-md rounded-xl bg-white p-8 shadow-xl"
@@ -69,7 +69,7 @@ function ContactDetail({ onClose }: ContactDetailProps) {
           </a>
         </p>
       </div>
-    </div>
+    </dialog>
   </div>
 );
 }
